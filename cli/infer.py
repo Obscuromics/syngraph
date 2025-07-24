@@ -1,6 +1,6 @@
 """
 
-Usage: syngraph infer -g <FILE> -t <NWK> (-s <STR> | -S <STR>) [-m <INT> -r <STR> -a <STR> -o <STR> -h]
+Usage: syngraph infer -g <FILE> -t <NWK> (-s <STR> | -S <STR>) [-m <INT> -r <STR> -a <STR> -o <STR> -b <BOOL> -h]
 
   [Options]
     -g, --syngraph <FILE>        Syngraph file
@@ -11,6 +11,7 @@ Usage: syngraph infer -g <FILE> -t <NWK> (-s <STR> | -S <STR>) [-m <INT> -r <STR
     -s, --reference_taxon <STR>  Taxon name to map ancestral seqs to
     -S, --reference_tsv <STR>    Predefined linkage groups in tsv format (marker_ID, LG_name) to map ancestral seqs to
     -o, --outprefix <STR>        Outprefix [default: test]
+    -b, --use_branches <BOOL>    Use phylogenetic distance to pick outgroup else syntenic distance. True or False. [default: True]
     -h, --help                   Show this message
 
 """
@@ -28,19 +29,20 @@ import pandas as pd
 import collections
 
 
-class ParameterObj():
+class ParameterObj:
     def __init__(self, args):
-        self.syngraph = self._get_path(args['--syngraph'])
-        self.tree = self._get_tree(args['--tree'])
-        self.minimum = int(args['--minimum'])
-        self.model = self._check_model(int(args['--rearrangements']))
-        self.ancinf = self._check_ancinf(args['--anc_inference'])
-        self.outprefix = args['--outprefix']
-        if args['--reference_taxon']:
-            self.reference_taxon = args['--reference_taxon']
+        self.syngraph = self._get_path(args["--syngraph"])
+        self.tree = self._get_tree(args["--tree"])
+        self.minimum = int(args["--minimum"])
+        self.model = self._check_model(int(args["--rearrangements"]))
+        self.ancinf = self._check_ancinf(args["--anc_inference"])
+        self.outprefix = args["--outprefix"]
+        self.use_branch_length = args["--use_branches"]
+        if args["--reference_taxon"]:
+            self.reference_taxon = args["--reference_taxon"]
             self.reference_tsv = None
-        elif args['--reference_tsv']:
-            self.reference_tsv = self._get_path(args['--reference_tsv'])
+        elif args["--reference_tsv"]:
+            self.reference_tsv = self._get_path(args["--reference_tsv"])
             self.reference_taxon = None
 
     def _get_path(self, infile):
@@ -68,14 +70,25 @@ class ParameterObj():
             sys.exit("[X] Invalid ancestral inference specified: %r" % str(ancinf))
         return ancinf
 
+
 def check_tree_syngraph_concordance(tree, syngraph):
     for leaf in tree.get_leaves():
-        if leaf.name not in syngraph.graph['taxa']:
-            sys.exit("\n[X] A leaf in the tree, {}, is not in the syngraph.\n".format(leaf.name))
+        if leaf.name not in syngraph.graph["taxa"]:
+            sys.exit(
+                "\n[X] A leaf in the tree, {}, is not in the syngraph.\n".format(
+                    leaf.name
+                )
+            )
+
 
 def check_reference_syngraph_concordance(reference, syngraph):
-    if reference not in syngraph.graph['taxa']:
-        print("\n[X] WARNING: The reference taxon, {}, is not in the syngraph.\n".format(reference))
+    if reference not in syngraph.graph["taxa"]:
+        print(
+            "\n[X] WARNING: The reference taxon, {}, is not in the syngraph.\n".format(
+                reference
+            )
+        )
+
 
 def generate_reference_dict(reference_path):
     reference_dict = {}
@@ -85,6 +98,7 @@ def generate_reference_dict(reference_path):
             ref_chrom = line.rstrip().split()[1]
             reference_dict[marker_ID] = ref_chrom
     return reference_dict
+
 
 def main(run_params):
     try:
@@ -99,17 +113,31 @@ def main(run_params):
         check_tree_syngraph_concordance(parameterObj.tree, syngraph)
         print("[+] Show Syngraph metrics ...")
         syngraph.show_metrics()
-        random.seed(44) 
+        random.seed(44)
 
-        solved_syngraph, log = sg.tree_traversal(syngraph, parameterObj)
+        solved_syngraph, log, reconstruction_order = sg.tree_traversal(
+            syngraph, parameterObj
+        )
         if parameterObj.reference_taxon:
-            check_reference_syngraph_concordance(parameterObj.reference_taxon, solved_syngraph)
-            mapped_log = sg.map_log(log, parameterObj.reference_taxon, None, 
-                solved_syngraph, parameterObj.minimum)
+            check_reference_syngraph_concordance(
+                parameterObj.reference_taxon, solved_syngraph
+            )
+            mapped_log = sg.map_log(
+                log,
+                parameterObj.reference_taxon,
+                None,
+                solved_syngraph,
+                parameterObj.minimum,
+            )
         else:
             reference_dict = generate_reference_dict(parameterObj.reference_tsv)
-            mapped_log = sg.map_log(log, parameterObj.reference_taxon, reference_dict, 
-                solved_syngraph, parameterObj.minimum)
+            mapped_log = sg.map_log(
+                log,
+                parameterObj.reference_taxon,
+                reference_dict,
+                solved_syngraph,
+                parameterObj.minimum,
+            )
 
         clusters = sg.clusters_by_descent(log, parameterObj.tree, solved_syngraph)
 
@@ -117,31 +145,39 @@ def main(run_params):
         clusters_df = pd.DataFrame(clusters)
         mapped_log_tsv = mapped_log_df.to_csv(sep="\t", header=None, index=None)
         clusters_tsv = clusters_df.to_csv(sep="\t", header=None, index=None)
+        reconstruction_order_tsv = pd.DataFrame(reconstruction_order).to_csv(sep="\t", header=None, index=None)
 
-        with open("{}.rearrangements.tsv".format(parameterObj.outprefix), 'w') as fh:
+        with open("{}.rearrangements.tsv".format(parameterObj.outprefix), "w") as fh:
             fh.write(mapped_log_tsv)
             fh.write("\n")
-        with open("{}.clusters.tsv".format(parameterObj.outprefix), 'w') as fh:
+        with open("{}.clusters.tsv".format(parameterObj.outprefix), "w") as fh:
             fh.write(clusters_tsv)
             fh.write("\n")
-        with open("{}.newick.ascii".format(parameterObj.outprefix), 'w') as fh:
+        with open("{}.newick.ascii".format(parameterObj.outprefix), "w") as fh:
             fh.write(parameterObj.tree.get_ascii())
             fh.write("\n")
-        with open("{}.newick.txt".format(parameterObj.outprefix), 'w') as fh:
+        with open("{}.newick.txt".format(parameterObj.outprefix), "w") as fh:
             fh.write(parameterObj.tree.write(format=1))
+            fh.write("\n")
+        with open("{}.reconstruction_order.tsv".format(parameterObj.outprefix), "w") as fh:
+            fh.write(reconstruction_order_tsv)
             fh.write("\n")
 
         print("[+] Save Syngraph to file ...")
-        graph_file = solved_syngraph.save(parameterObj, check_consistency=False, with_ancestors=True)
+        graph_file = solved_syngraph.save(
+            parameterObj, check_consistency=False, with_ancestors=True
+        )
         print("[+] Saved Syngraph in %r" % graph_file)
-
 
         print("[*] Total runtime: %.3fs" % (timer() - main_time))
     except KeyboardInterrupt:
-        sys.stderr.write("\n[X] Interrupted by user after %s seconds!\n" % (timer() - main_time))
+        sys.stderr.write(
+            "\n[X] Interrupted by user after %s seconds!\n" % (timer() - main_time)
+        )
         exit(-1)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
 
 
@@ -150,8 +186,8 @@ if __name__ == '__main__':
 #
 # event summary:
 #   branch, event_type,    event_ID,
-# 
-# event details:   
+#
+# event details:
 #   event_ID,    LMS representation before/after event (backwards in time)
 #
 # starting point:
