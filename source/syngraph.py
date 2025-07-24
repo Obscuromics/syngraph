@@ -765,7 +765,10 @@ def tree_traversal(syngraph, params):
         # might be possible to save info to stop it rechecking a node
         # store info about easiest triplet to solve in a list
         best_triplet = [None, None, float("inf")]
+        best_evaluation = best_triplet[2]
+
         for tree_node in params.tree.traverse(strategy="postorder"):
+            focal_node = tree_node.name
             # is there info to solve this node?
             if (
                 not tree_node.is_leaf()
@@ -775,52 +778,62 @@ def tree_traversal(syngraph, params):
                 child_1 = tree_node.get_children()[0].name
                 child_2 = tree_node.get_children()[1].name
                 if child_1 in available_taxa and child_2 in available_taxa:
-
-                    available_outgroups = get_available_outgroups(
-                        tree_node, available_taxa
-                    )
-
-                    if (len(available_outgroups) == 1) or (params.use_branch_length == True):
-                        if params.use_branch_length == True:
-                            outgroup = get_closest_outgroup(params.tree, tree_node, available_taxa)
-                        else:
-                            outgroup = available_outgroups[0]
+                    
+                    if not params.use_dist:
+                        outgroup = get_closest_outgroup(
+                            params.tree, tree_node, available_taxa
+                        )
                         best_evaluation_list = [child_1, child_2, outgroup]
                         best_evaluation = evaluate_triplet(
                             best_evaluation_list,
                             traversal_0_syngraph,
                             params.minimum,
                         )
-                        focal_node = tree_node.name
-
-                    elif len(available_outgroups) == 3:
-                        sister_node, niece_node, nephew_node = available_outgroups
-                        evaluation_lists = [
-                            [child_1, child_2, niece_node],
-                            [child_1, child_2, nephew_node],
-                            [niece_node, nephew_node, child_1],
-                            [niece_node, nephew_node, child_2],
-                        ]
-                        evaluations = [
-                            evaluate_triplet(
-                                eval_list, traversal_0_syngraph, params.minimum
-                            )
-                            for eval_list in evaluation_lists
-                        ]
-
-                        best_idx = evaluations.index(min(evaluations))
-                        best_evaluation_list = evaluation_lists[best_idx]
-
-                        if best_idx > 1:
-                            focal_node = sister_node
-                        else:
-                            focal_node = tree_node.name
 
                     else:
-                        #print(
-                        #    f"node {tree_node.name} is NOT yet evalulicious, continuing..."
-                        #)
-                        continue
+                        available_outgroups = get_available_outgroups(
+                            tree_node, available_taxa
+                        )
+
+                        if len(available_outgroups) == 1:
+                            outgroup = available_outgroups[0]
+                            best_evaluation_list = [child_1, child_2, outgroup]
+                            best_evaluation = evaluate_triplet(
+                                best_evaluation_list,
+                                traversal_0_syngraph,
+                                params.minimum,
+                            )
+
+                        elif len(available_outgroups) == 3:
+
+                            sister_node, niece_node, nephew_node = available_outgroups
+                            evaluation_lists = [
+                                [child_1, child_2, niece_node],
+                                [child_1, child_2, nephew_node],
+                                [niece_node, nephew_node, child_1],
+                                [niece_node, nephew_node, child_2],
+                            ]
+                            evaluations = [
+                                evaluate_triplet(
+                                    eval_list, traversal_0_syngraph, params.minimum
+                                )
+                                for eval_list in evaluation_lists
+                            ]
+
+                            best_idx = evaluations.index(min(evaluations))
+                            best_evaluation_list = evaluation_lists[best_idx]
+                            best_evaluation = evaluations[best_idx]
+                            
+                            print(
+                                f"evaluations: {evaluations}, min: {min(evaluations)}, idx: {best_idx}"
+                            )
+                            # what about tie breaks? or if all options are 0?
+
+                            if best_idx > 1:
+                                focal_node = sister_node
+
+                        elif not available_outgroups:
+                            continue
 
                     if best_evaluation < best_triplet[2]:
                         best_triplet = [
@@ -878,13 +891,15 @@ def tree_traversal(syngraph, params):
                 "[=] ========================================================================"
             )
 
-            reconstruction_order.append([
-                reconstruction_idx,
-                best_triplet[1],
-                best_triplet[0][0],
-                best_triplet[0][1],
-                best_triplet[0][2]
-            ])
+            reconstruction_order.append(
+                [
+                    reconstruction_idx,
+                    best_triplet[1],
+                    best_triplet[0][0],
+                    best_triplet[0][1],
+                    best_triplet[0][2],
+                ]
+            )
 
             reconstruction_idx += 1
     return traversal_0_syngraph, log, reconstruction_order

@@ -1,6 +1,6 @@
 """
 
-Usage: syngraph infer -g <FILE> -t <NWK> (-s <STR> | -S <STR>) [-m <INT> -r <STR> -a <STR> -o <STR> -b <BOOL> -h]
+Usage: syngraph infer -g <FILE> -t <NWK> (-s <STR> | -S <STR>) [-m <INT> -r <STR> -a <STR> -o <STR> -d -h]
 
   [Options]
     -g, --syngraph <FILE>        Syngraph file
@@ -11,7 +11,7 @@ Usage: syngraph infer -g <FILE> -t <NWK> (-s <STR> | -S <STR>) [-m <INT> -r <STR
     -s, --reference_taxon <STR>  Taxon name to map ancestral seqs to
     -S, --reference_tsv <STR>    Predefined linkage groups in tsv format (marker_ID, LG_name) to map ancestral seqs to
     -o, --outprefix <STR>        Outprefix [default: test]
-    -b, --use_branches <BOOL>    Use phylogenetic distance to pick outgroup else syntenic distance. True or False. [default: True]
+    -d, --use_dist               Use syntenic distance to pick outgroup when solving median genome
     -h, --help                   Show this message
 
 """
@@ -37,7 +37,10 @@ class ParameterObj:
         self.model = self._check_model(int(args["--rearrangements"]))
         self.ancinf = self._check_ancinf(args["--anc_inference"])
         self.outprefix = args["--outprefix"]
-        self.use_branch_length = args["--use_branches"]
+        if args["--use_dist"]:
+            self.use_dist = True
+        else:
+            self.use_dist = False
         if args["--reference_taxon"]:
             self.reference_taxon = args["--reference_taxon"]
             self.reference_tsv = None
