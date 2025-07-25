@@ -581,7 +581,7 @@ def write_in_unassigned(tree_node, syngraph, taxa, LMSs, unassignable_markers):
     print(
         "[=] Assigned {} of the markers not within any LMS".format(reassigned_markers)
     )
-    return syngraph
+    return syngraph, reassigned_markers
 
 
 def edit_rearrangement_log(rearrangement_log, LMSs):
@@ -616,9 +616,11 @@ def median_genome(
     # LMSs < minimum are dealt with later and don't contribute to events
     # remaining LMSs represent a fissioned median genome
     LMSs, unassignable_markers = get_LMSs(working_syngraph, taxa, minimum)
+    n_LMSs = len(LMSs.keys())
+    n_markers = sum([len(LMSs[LMS]) for LMS in LMSs])
     print(
         "[=] Generated {} LMSs containing {} markers".format(
-            len(LMSs.keys()), sum([len(LMSs[LMS]) for LMS in LMSs])
+            n_LMSs, n_markers
         )
     )
     print(
@@ -697,9 +699,11 @@ def median_genome(
             )
             triplet_rearrangement_log += new_rearrangements
             label_count += len(solved_connected_component.labelled_CWAL.keys())
+
+    n_chromosomes = len(solved_connected_components.labelled_CWAL.keys())
     print(
         "[=] Found a median genome with {} chromosomes".format(
-            len(solved_connected_components.labelled_CWAL.keys())
+            n_chromosomes
         )
     )
     # from solved_connected_components, add this new ancestral genome to a syngraph
@@ -714,10 +718,10 @@ def median_genome(
     # replace LMSs in the rearrangment_log with the actual markers
     triplet_rearrangement_log = edit_rearrangement_log(triplet_rearrangement_log, LMSs)
     # finally, write in LMSs/markers that were too small or missing from a taxon, but can be assigned by parismony
-    working_syngraph = write_in_unassigned(
+    working_syngraph, reassigned_markers = write_in_unassigned(
         tree_node, working_syngraph, taxa, LMSs, unassignable_markers
     )
-    return working_syngraph, triplet_rearrangement_log
+    return working_syngraph, triplet_rearrangement_log, n_LMSs, n_markers+reassigned_markers, n_chromosomes
 
 
 def get_available_outgroups(focal_node, available_taxa):
@@ -748,7 +752,7 @@ def get_available_outgroups(focal_node, available_taxa):
 def tree_traversal(syngraph, params):
     # write a log header
     log = [["#parent", "child", "event", "multiplicity", "ref_seqs"]]
-    reconstruction_order = [["#idx", "node", "child_1", "child_2", "outgroup"]]
+    reconstruction_order = [["#idx", "node", "child_1", "child_2", "outgroup", "n_LMSs","n_markers", "n_chromosomes"]]
     reconstruction_idx = 1
     # copy syngraph
     traversal_0_syngraph = copy.deepcopy(syngraph)
@@ -866,7 +870,7 @@ def tree_traversal(syngraph, params):
                 )
             )
             # call the solver
-            traversal_0_syngraph, rearrangement_log = median_genome(
+            traversal_0_syngraph, rearrangement_log, n_LMSs, n_markers, n_chromosomes = median_genome(
                 best_triplet[1],
                 traversal_0_syngraph,
                 best_triplet[0],
@@ -898,6 +902,9 @@ def tree_traversal(syngraph, params):
                     best_triplet[0][0],
                     best_triplet[0][1],
                     best_triplet[0][2],
+                    n_LMSs,
+                    n_markers,
+                    n_chromosomes
                 ]
             )
 
