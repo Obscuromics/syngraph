@@ -20,13 +20,10 @@ import sys
 from docopt import docopt
 import pathlib
 import ete3
-import copy
 import random
-from functools import partial
 from timeit import default_timer as timer
-from source import syngraph as sg
+import syngraph.syngraph as sg
 import pandas as pd
-import collections
 
 
 class ParameterObj:

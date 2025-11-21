@@ -14,15 +14,13 @@ Usage: syngraph viz -g <FILE> -t <STR> -n <INT> [-o <STR> -s <STR> -m <INT> -h]
 """
 
 import sys
-import os
 from docopt import docopt
 import pathlib
 from timeit import default_timer as timer
-from source import syngraph as sg
+import syngraph.syngraph as sg
 import collections
 from graph_tool.all import *
 import itertools
-from matplotlib import cm
 
 class ParameterObj():
     def __init__(self, args):

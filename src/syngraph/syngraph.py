@@ -1,22 +1,15 @@
 import sys
 import itertools
 import more_itertools
-import matplotlib
-import matplotlib.cm as cm
 import pandas as pd
-
-pd.set_option("display.max_rows", None)
-from tqdm import tqdm
 import networkx as nx
 import collections
 import functools
-from scipy import stats
 from operator import attrgetter
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
 import random
 import copy
+
+pd.set_option("display.max_rows", None)
 
 
 #############################################################################################
@@ -47,7 +40,7 @@ def load_markerObjs(parameterObj):
             taxon_markerObjs.append(markerObj)
         taxon_markerObjs = sorted(taxon_markerObjs, key=attrgetter("seq", "start"))
         tmp_markerObjs.extend(taxon_markerObjs)
-    if parameterObj.missing == True:
+    if parameterObj.missing:
         return tmp_markerObjs
     else:
         markerObjs = []
@@ -72,7 +65,7 @@ def get_closest_outgroup(
     closest_distance_so_far = float("inf")
     for some_tree_node in tree.search_nodes():
         if some_tree_node.name in available_taxa:
-            if not some_tree_node.name in [
+            if some_tree_node.name not in [
                 descendant.name for descendant in tree_node.get_descendants()
             ]:
                 if not some_tree_node.name == tree_node.name:
@@ -362,17 +355,22 @@ def evaluate_genome_with_parsimony(
             rearrangement_log = ffsd(
                 compact_synteny_2(ios, possible_median), rearrangement_log, i
             )
+        print(f'{ios}, {i}, : {rearrangement_log}')
         # count rearrangements
         for rearrangement in rearrangement_log:
             if rearrangement[1] == i:
                 total += rearrangement[3]
         # calculate branch rate, can use this to settle ties
-        branch_rate = total / (branch_lengths["up"][i] + branch_lengths["down"][i])
+        try:
+            branch_rate = total / (branch_lengths["up"][i] + branch_lengths["down"][i])
+        except ZeroDivisionError:
+            branch_rate = total/1e-8
         if branch_rate > max_branch_rate:
             max_branch_rate = branch_rate
         # if after two branches the total is already higher than the best so far then we can stop the search
         if best_total < total:
             return best_genome, best_total, best_max_branch_rate, best_rearrangement_log
+
     # if better than we have found so far, save the details
     if (
         best_total > total
@@ -777,7 +775,7 @@ def tree_traversal(syngraph, params):
             if (
                 not tree_node.is_leaf()
                 and not tree_node.is_root()
-                and not tree_node.name in available_taxa
+                and tree_node.name not in available_taxa
             ):
                 child_1 = tree_node.get_children()[0].name
                 child_2 = tree_node.get_children()[1].name
@@ -1341,7 +1339,7 @@ class Syngraph(nx.Graph):
             return graph_file
 
     def get_taxon_syngraph(self, taxon=None):
-        if not taxon is None:
+        if taxon is not None:
             edges = []
             for u, v, taxa in self.edges(data="taxa"):
                 if taxon in set(taxa):
@@ -1377,7 +1375,7 @@ class Syngraph(nx.Graph):
                 markerObj.name
             )
             self.graph["taxa"].add(markerObj.taxon)
-            if not markerObj.name in self:
+            if markerObj.name not in self:
                 # add node if it does not exist yet
                 self.add_node(
                     markerObj.name,
@@ -1405,7 +1403,7 @@ class Syngraph(nx.Graph):
                 )
             else:
                 # first marker on seq
-                if not prev_markerObj.name is None:
+                if prev_markerObj.name is not None:
                     # deal with terminal marker on prev seq
                     self.nodes[prev_markerObj.name]["terminal"].add(
                         prev_markerObj.taxon

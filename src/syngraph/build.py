@@ -14,9 +14,8 @@ import os
 import sys
 from docopt import docopt
 import pathlib
-import collections
 from timeit import default_timer as timer
-from source import syngraph as sg
+import syngraph.syngraph as sg
 
 class ParameterObj():
     def __init__(self, args):
