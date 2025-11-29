@@ -1,6 +1,15 @@
 
 ### Scripts
 
+#### already working
+
+Decomposes tabulated file from syngraph into assigments of individual nodes. I made them one column at times including missing values and saved names of busco markers corresponding to the lines in individual file `busco_order.tsv`, other files are saved as `nXXX_seq.tsv`. Example usage
+
+```bash
+python3 scripts/decompose_table.py --syngtab data/hymenoptera/syngraph_run/hymenoptera.syngraph_tabulate.table.tsv --out-dir data/hymenoptera/syngraph_run/node_asn
+```
+
+#### not adjusted
 Adding these scripts
 
 ```
