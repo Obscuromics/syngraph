@@ -11,9 +11,7 @@ suppressPackageStartupMessages(library('argparse'))
 #root <- paste0(getwd(), "/")
 ################################################################################
 # color palette
-# pal <- c("M1" = "#1573afff", "M2" = "#e59d38ff", "M3" = "#f0e354ff", 
-#          "M4" = "#169e73ff", "M5" = "#60b5e1ff", "M6" = "black", "unassigned" = "grey")
-source('scripts/20250620_colour_pal.R')
+source('scripts/ALGs_palettes.R') # could define arbitrary palettes if the ALGs do not have predefined colours
 pal <- c(pal, "unassigned" = "grey")
 ################################################################################
 
@@ -27,30 +25,38 @@ parser$add_argument("-o", "--output",
     dest="o", help="Base of the output name (.png will be attached)")
 parser$add_argument("-a", "--alg-set",  
     help="File with BUSCO to ALG assignments", default = "data/diptera.no_plecia.mindist.m165_n1_n2.tsv")
+parser$add_argument("-d", "--busco-dir",  
+    help="Directory with BUSCO tables", default = "./data/hymenoptera/syngraph_busco_tables/", dest="d")
 
 args <- parser$parse_args()
 
+#### THIS NEEDS TO GET REMOVED!!!
 target_species <- c(args$s1, args$s2) #c("Bibio_marci", "Ptychoptera_contaminata")
-all_genome_data <- read.csv(text = gsheet2text("https://docs.google.com/spreadsheets/d/1K01wVWkMW-m6yT9zDX8gDekp-OECubE-9HcmD8RnmkM/edit?gid=1940964825#gid=1940964825", format='csv'),
-                            stringsAsFactors = F, header = T, check.names = F)
+# all_genome_data <- read.csv(text = gsheet2text("https://docs.google.com/spreadsheets/d/1K01wVWkMW-m6yT9zDX8gDekp-OECubE-9HcmD8RnmkM/edit?gid=1940964825#gid=1940964825", format='csv'),
+#                             stringsAsFactors = F, header = T, check.names = F)
 
-target_species_data <- all_genome_data %>% filter(species %in% target_species) %>%
-  select(species, accession, chromosome, chromsome_size_b)
+# target_species_data <- all_genome_data %>% filter(species %in% target_species) %>%
+#   select(species, accession, chromosome, chromosome_size_b)
 
-target_species_data$accession <- sub("\\.[0-9]", "", target_species_data$accession)
+# target_species_data$accession <- sub("\\.[0-9]", "", target_species_data$accession)
 
 # load BUSCO data
-busco_files_list <- paste0("data/busco_tables/", unique(target_species_data$species), ".syngraph.buscos.tsv")
-buscos <- bind_rows(lapply(busco_files_list, read.table))
-colnames(buscos) <- c("marker", "chromosome", "start", "end")
+### HERE IT IS MORELESS WHAT IS NEEDED EXCEPT FOR THE END OF THE CHROMSOMOES WHERE ARE NO BUSCOs
+busco_files_list <- paste0(args$d, "/", target_species, ".syngraph.buscos.tsv")
+print(busco_files_list)
+b1 <- read.table(busco_files_list[[1]], header = T, sep = '\t', col.names = c("marker", "chromosome", "start", "end"))
+b1[, "species"] <- args$s1
+b2 <- read.table(busco_files_list[[2]], header = T, sep = '\t', col.names = c("marker", "chromosome", "start", "end"))
+b2[, "species"] <- args$s2
+buscos <- bind_rows(b1, b2)
 
 # read BUSCO to ALG file; "data/diptera.no_plecia.mindist.m165_n1_n2.tsv"
 algs <- read.table(args$a, header = TRUE, sep = "\t", col.names = c("marker", "ALG"))
 
 ################################################################################
 # merge everything with the main table
-target_species_data <- left_join(target_species_data, buscos, by = "chromosome")
-target_species_data <- left_join(target_species_data, algs, by = "marker")
+# target_species_data <- left_join(target_species_data, buscos, by = "chromosome")
+target_species_data <- left_join(buscos, algs, by = "marker")
 
 # remove chromosomes that have no markers
 target_species_data <- target_species_data %>% filter(!is.na(target_species_data$marker))
@@ -76,7 +82,7 @@ for (i in 1:nrow(df_lin)) {
     
   } else if (df_lin$chromosome[i] != df_lin$chromosome[i - 1]) {
     # Same species but new chromosome → increase offset
-    chr_offset <- chr_offset + as.integer(df_lin$chromsome_size_b[i - 1])
+    chr_offset <- chr_offset + as.integer(df_lin$end[i - 1])
   }
   
   # Assign linearized positions
@@ -119,16 +125,16 @@ sp_y <- target_species[2]
 chr_info_x <- df_lin %>%
   filter(species == sp_x) %>%
   arrange(chromosome) %>%
-  distinct(chromosome, chromsome_size_b) %>%
-  mutate(cum_end = cumsum(chromsome_size_b))
+  max(chromosome, end) %>%
+  mutate(cum_end = cumsum(end))
 
 chr_info_x$order <- 1:length(chr_info_x$chromosome)
 
 chr_info_y <- df_lin %>%
   filter(species == sp_y) %>%
   arrange(chromosome) %>%
-  distinct(chromosome, chromsome_size_b) %>%
-  mutate(cum_end = cumsum(chromsome_size_b))
+  max(chromosome, end) %>%
+  mutate(cum_end = cumsum(end))
 
 chr_info_y$order <- 1:length(chr_info_y$chromosome)
 
