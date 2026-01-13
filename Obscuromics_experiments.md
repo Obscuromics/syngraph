@@ -78,20 +78,26 @@ scp farm:/data/tol/teams/jaron/lustre/users/se13/diptera_alg/data/results/infer_
 ### Hymenoptera
 
 ```bash
-data/hymenoptera/syngraph_busco_tables/Trichopria
-data/hymenoptera/excluded_syngraph_busco_tables/
+while read sp; do mv data/hymenoptera/syngraph_busco_tables/$sp* data/hymenoptera/excluded_syngraph_busco_tables/; done < data/hymenoptera/exclude
 
 scripts/prep_syngraph_tree.py data/hymenoptera/hymenoptera.supermatrix.phy.treefile data/hymenoptera/excluded_syngraph_busco_tables data/hymenoptera/hymenoptera.pruned.NEW.newick
 
 syngraph build -d data/hymenoptera/syngraph_busco_tables -m -o data/hymenoptera/syngraph_run_pruned/hymenoptera.syngraph_build.pruned
 
-syngraph infer -g data/hymenoptera/syngraph_run_pruned/hymenoptera.syngraph_build.pruned.pickle -t data/hymenoptera/hymenoptera.pruned.NEW.newick -m 50 -r 2 -a quick -s Panorpa_germanica -o data/hymenoptera/syngraph_run_pruned/hymenoptera.mindist.m50.syngraph_infer -d
+syngraph infer -g data/hymenoptera/syngraph_run_pruned/hymenoptera.syngraph_build.pruned.pickle -t data/hymenoptera/hymenoptera.pruned.NEW.newick -m 50 -r 2 -a quick -s Panorpa_germanica -o data/hymenoptera/syngraph_run_pruned2/hymenoptera.mindist.m50.syngraph_infer -d
 
 # success
 
-SYNGTAB=data/hymenoptera/syngraph_run_pruned/hymenoptera.mindist.m50.syngraph_tabulate.table.tsv
-syngraph tabulate -g data/hymenoptera/syngraph_run_pruned/hymenoptera.syngraph_build.pruned.pickle -o data/hymenoptera/syngraph_run_pruned/hymenoptera.mindist.m50.syngraph_tabulate
-python3 scripts/decompose_table.py --syngtab $SYNGTAB --out-dir data/hymenoptera/syngraph_run_pruned/node_asn
+SYNGTAB=data/hymenoptera/syngraph_run_pruned2/hymenoptera.mindist.m50.syngraph_tabulate.table.tsv
+syngraph tabulate -g data/hymenoptera/syngraph_run_pruned2/hymenoptera.mindist.m50.syngraph_infer.with_ancestors.pickle -o data/hymenoptera/syngraph_run_pruned2/hymenoptera.mindist.m50.syngraph_tabulate
+python3 scripts/decompose_table.py --syngtab $SYNGTAB --out-dir data/hymenoptera/syngraph_run_pruned2/node_asn
 
-Rscript scripts/plot_tree_with_ALGs_at_nodes.R -t data/hymenoptera/syngraph_run_pruned/hymenoptera.mindist.m50.syngraph_infer.newick.txt -a data/hymenoptera/syngraph_run/ALG_syngraph.hymenoptera.n4.ALGs.tsv -n data/hymenoptera/syngraph_run_pruned/node_asn/ -l family -s data/hymenoptera/Hymenoptera_genomes_taxonomy.tsv -o figures/syngraph_tree_of_changes_pruned
+Rscript scripts/plot_tree_with_ALGs_at_nodes.R -t data/hymenoptera/syngraph_run_pruned2/hymenoptera.mindist.m50.syngraph_infer.newick.txt -a data/hymenoptera/syngraph_run/ALG_syngraph.hymenoptera.n4.ALGs.tsv -n data/hymenoptera/syngraph_run_pruned2/node_asn/ -l family -s data/hymenoptera/Hymenoptera_genomes_taxonomy.tsv -o figures/syngraph_tree_of_changes_pruned_2
+
+Rscript scripts/markers_per_node.R -t data/hymenoptera/syngraph_run_pruned2/hymenoptera.mindist.m50.syngraph_infer.newick.txt -nodes_dir data/hymenoptera/syngraph_run_pruned2/node_asn/ -a data/hymenoptera/syngraph_run/ALG_syngraph.hymenoptera.n4.ALGs.tsv  -o figures/syngraph_tree_pruned2_makers_in_nodes
+
+
+Rscript scripts/define_ALGs.R -o data/hymenoptera/syngraph_run/ALG_syngraph.hymenoptera.prune2.n1.ALGs.tsv -n n1 -lgn y -i 'data/hymenoptera/syngraph_run_pruned2/node_asn/'
+
+data/hymenoptera/syngraph_run/ALG_syngraph.hymenoptera.prune2.n1.ALGs.tsv
 ```
