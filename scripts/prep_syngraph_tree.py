@@ -15,8 +15,8 @@ def tabulate_names(tree):
         names[clade.name] = clade
     return names
 
-treefile = './data/results/infer_alg_diptera/iqtree/diptera.supermatrix.phy.treefile'
-exclusion_dir = './data/results/infer_alg_diptera/excluded_syngraph_busco_tables/'
+treefile = sys.argv[1] # './data/results/infer_alg_diptera/iqtree/diptera.supermatrix.phy.treefile'
+exclusion_dir = sys.argv[2] # './data/results/infer_alg_diptera/excluded_syngraph_busco_tables/'
 outgroup_f = None # './data/results/infer_alg_diptera/outgroup_clade.txt'
 
 exclusion_files = [f for f in listdir(exclusion_dir) if isfile(join(exclusion_dir, f))]
@@ -43,4 +43,4 @@ if outgroup_f:
     		raise ValueError("outgroup is paraphyletic")
 
 else:
-	Phylo.write(tree, './data/results/infer_alg_diptera/diptera.pruned.newick','newick')
+	Phylo.write(tree, sys.argv[3],'newick')
