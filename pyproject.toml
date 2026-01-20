@@ -25,7 +25,6 @@ authors = [
 ]
 maintainers = [
   {name = "Alex Mackintosh", email = "alexander.mackintosh@ebc.uu.se"},
-  {name = "Sam Ebdon", email = "se13@sanger.ac.uk"}
 ]
 
 description = "Syngraph"
