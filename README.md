@@ -2,10 +2,13 @@
 A toolkit for evolutionary analyses of linkage groups
 
 # Dependencies
-Best addressed via [conda](https://docs.conda.io/en/latest/miniconda.html)
+Best installed in an environment [conda](https://docs.conda.io/en/latest/miniconda.html)
 
 ```
-$ conda install pandas docopt ete3 pygraphviz matplotlib tqdm networkx=2.4 numpy=1.20.3=py38h9894fe3_0 python=3.8 more-itertools
+conda create -n syngraph python=3.9 && conda activate syngraph
+git clone -b desire_path https://github.com/Obscuromics/syngraph.git
+cd syngraph
+pip install .
 ```
 
 # Usage
@@ -23,10 +26,6 @@ Usage: syngraph <module> [<args>...] [-D -V -h]
     -D, --debug         Print debug information [TBI]
     -v, --version       Show version
 
-  [Dependencies] 
-    ---------------------------------------------------------------------------------------------
-    | $ conda install -c conda-forge networkx=2.4 pandas docopt tqdm ete3 pygraphviz matplotlib |
-    ---------------------------------------------------------------------------------------------
 ```
 
 ### Build a syngraph from BUSCO data, allowing for missingness

@@ -13,20 +13,16 @@ Usage: syngraph <module> [<args>...] [-D -V -h]
     -D, --debug         Print debug information [TBI]
     -v, --version       Show version
 
-  [Dependencies] 
-    ------------------------------------------------------------------------------
-    | $ conda install -c conda-forge networkx pandas docopt tqdm ete3 pygraphviz |
-    ------------------------------------------------------------------------------
-
 """
 
 import sys
 from docopt import docopt
+from importlib.metadata import version
 from timeit import default_timer as timer
 
 def main():
     try:
-        __version__ = '0.1.0a'
+        __version__ = version("syngraph")
         start_time = timer()
         args = docopt(__doc__, help=True, version=__version__, options_first=True)
         run_params = {
@@ -35,16 +31,16 @@ def main():
             'version': __version__
         }
         if args['<module>'] == 'build':
-            import cli.build as build
+            import syngraph.build as build
             build.main(run_params)
         elif args['<module>'] == 'infer':
-            import cli.infer as infer
+            import syngraph.infer as infer
             infer.main(run_params)
         elif args['<module>'] == 'tabulate':
-            import cli.tabulate as tabulate
+            import syngraph.tabulate as tabulate
             tabulate.main(run_params)
         elif args['<module>'] == 'viz':
-            import cli.viz as viz
+            import syngraph.viz as viz
             viz.main(run_params)
         else:
             sys.exit("%r is not a syngraph module. See 'syngraph -help'." % args['<module>'])

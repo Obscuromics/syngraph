@@ -9,13 +9,11 @@ Usage: syngraph tabulate -g <FILE> [-o <STR> -h]
 
 """
 
-import os
 import sys
 from docopt import docopt
 import pathlib
-import collections
 from timeit import default_timer as timer
-from source import syngraph as sg
+import syngraph.syngraph as sg
 import pandas as pd
 
 class ParameterObj():
