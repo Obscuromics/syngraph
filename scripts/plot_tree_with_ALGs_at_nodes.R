@@ -173,7 +173,7 @@ if ( taxonomy_file != "" ){
 
 ########## Plotting the tree
 
-pdf(output_tree, height = 80, width = 20)
+pdf(output_tree, height = 80, width = 80)
 
 plot(tree,  show.node.label = TRUE)
 

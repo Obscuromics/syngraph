@@ -355,7 +355,7 @@ def evaluate_genome_with_parsimony(
             rearrangement_log = ffsd(
                 compact_synteny_2(ios, possible_median), rearrangement_log, i
             )
-        print(f'{ios}, {i}, : {rearrangement_log}')
+        #print(f'{ios}, {i}, : {rearrangement_log}')
         # count rearrangements
         for rearrangement in rearrangement_log:
             if rearrangement[1] == i:
@@ -826,9 +826,9 @@ def tree_traversal(syngraph, params):
                             best_evaluation_list = evaluation_lists[best_idx]
                             best_evaluation = evaluations[best_idx]
                             
-                            print(
-                                f"evaluations: {evaluations}, min: {min(evaluations)}, idx: {best_idx}"
-                            )
+                            #print(
+                            #    f"evaluations: {evaluations}, min: {min(evaluations)}, idx: {best_idx}"
+                            #)
                             # what about tie breaks? or if all options are 0?
 
                             if best_idx > 1:

@@ -3,7 +3,7 @@
 suppressPackageStartupMessages(library('dplyr'))
 suppressPackageStartupMessages(library('tidyverse'))
 suppressPackageStartupMessages(library('ggplot2'))
-suppressPackageStartupMessages(library('gsheet'))
+#suppressPackageStartupMessages(library('gsheet'))
 suppressPackageStartupMessages(library('argparse'))
 
 ################################################################################
@@ -115,6 +115,7 @@ df_wide <- df_lin %>%
   # Optional: move stevens next to marker
   relocate(ALG, .after = marker)
 
+
 ################################################################################
 # plotting
 
@@ -122,6 +123,14 @@ sp_x <- target_species[1]
 sp_y <- target_species[2]
 
 # Filter chrom info for species X and Y
+
+test <- df_lin %>%
+	filter(species == sp_x) %>%
+	arrange(chromosome)
+
+
+print(head(test))
+
 chr_info_x <- df_lin %>%
   filter(species == sp_x) %>%
   arrange(chromosome) %>%
@@ -136,8 +145,9 @@ chr_info_y <- df_lin %>%
   max(chromosome, end) %>%
   mutate(cum_end = cumsum(end))
 
-chr_info_y$order <- 1:length(chr_info_y$chromosome)
 
+
+chr_info_y$order <- 1:length(chr_info_y$chromosome)
 # Chromosome label midpoints
 chr_labels_x <- df_lin %>%
   filter(species == sp_x) %>%
