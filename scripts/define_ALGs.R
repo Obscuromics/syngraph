@@ -70,6 +70,8 @@ if ("_" %in% strsplit(args$n, "")[[1]]){
     }
 } else {
     syngraph[, 'node'] <- read.table(paste0(args$i, "/", args$n, "_seq.tsv"), blank.lines.skip = F)[, 1]
+
+    syngraph <- syngraph[syngraph[, 'node'] != '', ]
     syngraph[, 'ALG'] <- NA
 
     table_of_groups <- sort(table(syngraph[, 'node']), T)

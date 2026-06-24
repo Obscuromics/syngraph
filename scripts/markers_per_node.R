@@ -18,11 +18,11 @@ args <- parser$parse_args()
 
 # these need to be made into arguments in the end
 treefile <- args$t 
-# treefile <- 'data/hymenoptera/syngraph_run_pruned2/hymenoptera.mindist.m50.syngraph_infer.newick.txt'
+# treefile <- 'data/sponges/sponge.syngraph_infer.newick.txt'
 busco_asn_file <- args$a
-# busco_asn_file <- 'data/hymenoptera/syngraph_run/ALG_syngraph.hymenoptera.n4.ALGs.tsv' # args$a
+# busco_asn_file <- 'data/sponges/syngraph_run/draft_ALGs.tsv' # args$a
 directory_with_nodes <- args$nodes_dir
-# directory_with_nodes <- paste0("data/hymenoptera/syngraph_run_pruned2/node_asn/")
+# directory_with_nodes <- paste0("data/sponges/syngraph_run/node_asn/")
 
 output_figure <- paste0(args$o, '.pdf')
 
@@ -67,6 +67,11 @@ load_node <- function(node_file){
 
 all_node_asn <- lapply(paste0(directory_with_nodes, all_node_files), load_node)
 names(all_node_asn) <- node_names
+
+node_lgs <- read.table(paste0(directory_with_nodes, "n4_seq.tsv"), header = F, blank.lines.skip = F, col.names = c('chrNode'))
+
+sum(table(node_lgs)[-1])
+# 
 
 buscos_per_node <- sapply(all_node_asn, function(x){ sum(x[, 3]) } )
 
