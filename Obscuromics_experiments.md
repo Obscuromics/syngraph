@@ -270,3 +270,24 @@ or to include also paints of species
 ```bash
 Rscript scripts/plot_tree_with_ALGs_at_nodes.R -t data/hymenoptera/syngraph_run_pruned2/hymenoptera.mindist.m50.syngraph_infer.newick.txt -a data/hymenoptera/syngraph_run/ALG_syngraph.hymenoptera.prune2.n1.ALGs.tsv -n data/hymenoptera/syngraph_run_pruned2/node_asn/ -l family -s data/hymenoptera/Hymenoptera_genomes_taxonomy.tsv -o figures/syngraph_TEST -species_marker_dir data/hymenoptera/syngraph_busco_tables
 ```
+
+### Beetles
+
+```bash
+
+cp ../../coleoptera-ALGs/analyses/crosspainting_alg/alg.coleo.odb12.new.tsv data/coleoptera/alg.coleo.odb12.new.tsv # deleted the first line
+cp ../../coleoptera-ALGs/analyses/phylogeny_reconstructions/syngraph.infer.m10.2.quick.newick_filter_rm.mod.txt data/coleoptera
+cp ../../coleoptera-ALGs/analyses/alg_inference_syngraph/syngraph.tabulate.m10.2.quick.with_ancestors.table_filter_rm_mod_mergechryso.tsv data/coleoptera
+vi data/coleoptera/syngraph.tabulate.m10.2.quick.with_ancestors.table_filter_rm_mod_mergechryso.tsv
+
+python3 scripts/decompose_table.py --syngtab data/coleoptera/syngraph.tabulate.m10.2.quick.with_ancestors.table_filter_rm_mod_mergechryso.tsv --out-dir data/coleoptera/node_asn
+
+for sp_file in data/coleoptera/busco_nofilter/*; do
+    SP=`basename $sp_file .tsv`
+    echo $SP
+    tail -n+4 $sp_file | grep -v "Missing" | cut -f 1,3,4,5 >  data/coleoptera/syngraph_busco_tables/$SP.syngraph.buscos.tsv
+done
+
+# -l family -s data/hymenoptera/Hymenoptera_genomes_taxonomy.tsv
+Rscript scripts/plot_tree_with_ALGs_at_nodes.R -t data/coleoptera/syngraph.infer.m10.2.quick.newick_filter_rm.mod.txt -a data/coleoptera/alg.coleo.odb12.new.tsv -n data/coleoptera/node_asn/  -o figures/syngraph_coleoptera_TEST -species_marker_dir data/coleoptera/syngraph_busco_tables/ -r data/coleoptera/syngraph.infer.m10.2.quick.rearrangements_filter_rm_vis.tsv -highlight_chromosomes data/coleoptera/X_chromosomes.tsv
+```
