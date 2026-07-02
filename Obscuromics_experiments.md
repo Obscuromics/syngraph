@@ -289,5 +289,15 @@ for sp_file in data/coleoptera/busco_nofilter/*; do
 done
 
 # -l family -s data/hymenoptera/Hymenoptera_genomes_taxonomy.tsv
-Rscript scripts/plot_tree_with_ALGs_at_nodes.R -t data/coleoptera/syngraph.infer.m10.2.quick.newick_filter_rm.mod.txt -a data/coleoptera/alg.coleo.odb12.new.tsv -n data/coleoptera/node_asn/  -o figures/syngraph_coleoptera_TEST -species_marker_dir data/coleoptera/syngraph_busco_tables/ -r data/coleoptera/syngraph.infer.m10.2.quick.rearrangements_filter_rm_vis.tsv -highlight_chromosomes data/coleoptera/X_chromosomes.tsv
+Rscript scripts/plot_tree_with_ALGs_at_nodes.R -t data/coleoptera/syngraph.infer.m10.2.quick.newick_filter_rm.mod.txt -a data/coleoptera/alg.coleo.odb12.new.tsv -n data/coleoptera/node_asn/  -o figures/syngraph_coleoptera_TEST -species_marker_dir data/coleoptera/syngraph_busco_tables/ -r data/coleoptera/syngraph.infer.m10.2.quick.rearrangements_filter_rm_vis.tsv -highlight_chromosomes data/coleoptera/X_chromosomes.tsv -subtree n4
+```
+
+```
+data/coleoptera/syngraph.tabulate.m10.2.quick.with_ancestors.table_filter_rm_mod_mergechryso.tsv
+```
+
+Highlighting Ys too.
+
+```bash
+Rscript scripts/plot_tree_with_ALGs_at_nodes.R -t data/coleoptera/syngraph.infer.m10.2.quick.newick_filter_rm.mod.txt -a data/coleoptera/alg.coleo.odb12.new.tsv -n data/coleoptera/node_asn/  -o figures/syngraph_coleoptera_TEST -species_marker_dir data/coleoptera/syngraph_busco_tables/ -r data/coleoptera/syngraph.infer.m10.2.quick.rearrangements_filter_rm_vis.tsv -highlight_chromosomes_red data/coleoptera/X_chromosomes.tsv -highlight_chromosomes_blue data/coleoptera/Y_chromosomes.tsv -subtree n6
 ```

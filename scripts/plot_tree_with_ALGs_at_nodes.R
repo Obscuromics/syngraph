@@ -19,6 +19,8 @@ parser$add_argument("-l", "-level",
     dest="l", help="Taxonomic level to plot (present in the header or -species_table)", default = "family")
 parser$add_argument("-subtree",  
     dest="subtree", help="Plot only a subtree from a specified node.", default = "")
+parser$add_argument("--ultrametrictree",  
+    dest="ultrametrictree", help="Convert the tree to ultrametric tree (all root to tips are equal).", action = "store_true", default = FALSE)
 parser$add_argument("-species_marker_dir",  
     help="Name of the directory with syngraph-formated tables, will turn on painting of all the tips (default: won't paint tips))", default = "")
 
@@ -31,8 +33,13 @@ parser$add_argument("-trace_alg", default = '',
     dest="trace_alg", help="When rearrangements file is supplied, one can specify a single ALG to trace through the tree (will be highlighted in the plot).")
 parser$add_argument("-root",  
     help="Tip name of the root (default: don't root))", default = "")
-parser$add_argument("-highlight_chromosomes",  
-    dest="highlight_chromosomes", help="A list of chromosomes to highlight in the plot (one per line, e.g. X chromosomes)", default = "")
+parser$add_argument("-highlight_chromosomes_red",  
+    dest="highlight_chromosomes_red", help="A list of chromosomes to highlight in the plot (one per line, e.g. X chromosomes)", default = "")
+parser$add_argument("-highlight_chromosomes_blue",  
+    dest="highlight_chromosomes_blue", help="A list of chromosomes to highlight in the plot (one per line, e.g. X chromosomes)", default = "")
+
+parser$add_argument("--plot_species_markers_close",  
+    dest="plot_species_markers_close", help="boolean flag to plot species markers close to the tree (default: FALSE)", action = "store_true") 
 
 parser$add_argument("-o", "-output",  
     dest="o", help="Base of the output name (.png will be attached)")
@@ -47,17 +54,23 @@ treefile <- args$t
 rearrangement_file <- args$r
 # rearrangement_file <- 'data/hymenoptera/syngraph_run/hymenoptera.mindist.m50.rearrangements.tsv'
 
+plot_species_markers_close <- args$plot_species_markers_close
+
 trace_alg <- args$trace_alg
 # trace_alg <- 'CX'
 
-highlight_chromosomes <- args$highlight_chromosomes
-# highlight_chromosomes <- "data/coleoptera/X_chromosomes.tsv"
+highlight_chromosomes_red <- args$highlight_chromosomes_red
+# highlight_chromosomes_red <- "data/coleoptera/X_chromosomes.tsv"
+
+highlight_chromosomes_blue <- args$highlight_chromosomes_blue
+# highlight_chromosomes_blue <- "data/coleoptera/Y_chromosomes.tsv"
 
 taxonomy_file <- args$species_table
 # taxonomy_file <- 'data/hymenoptera/Hymenoptera_genomes_taxonomy.tsv'
 plot_level <- args$l
 # plot_level <- 'family'
 subtree <- args$subtree
+ultrametric_tree <- args$ultrametrictree
 
 species_marker_dir <- args$species_marker_dir
 # species_marker_dir <- "data/hymenoptera/syngraph_busco_tables/"
@@ -157,6 +170,14 @@ if ( root != ""){
     tree <- rooted_tree
 }
 
+if ( ultrametric_tree ){
+    print("Converting the tree to ultrametric tree.")
+    # tree <- chronos(tree)
+
+    real_calib1 = makeChronosCalib(tree, node = 'root', age.min = 1, age.max = 1, interactive = FALSE, soft.bounds = FALSE) 
+    tree = chronos(tree, lambda = 0, model = 'relaxed', calibration = real_calib1)
+}
+
 tree_components <- c(tree$tip.label, tree$node.label)
 
 # ######### Processing
@@ -240,7 +261,15 @@ print(paste("Plotting..."))
 
 ###
 
-chromosomes_to_highlight <- read.table(highlight_chromosomes, header = FALSE)[, 1]
+if (highlight_chromosomes_red != ""){
+    print(paste("Highlighting chromosomes in red from", highlight_chromosomes_red))
+    chromosomes_to_highlight_in_red <- read.table(highlight_chromosomes_red, header = FALSE)[, 1]
+
+}
+if (highlight_chromosomes_blue != ""){
+    print(paste("Highlighting chromosomes in blue from", highlight_chromosomes_blue))
+    chromosomes_to_highlight_in_blue <- read.table(highlight_chromosomes_blue, header = FALSE)[, 1]
+}
 
 
 ########## Plotting the tree
@@ -357,11 +386,14 @@ for (tip_i in c(1:(length(tree$tip.label) + 2))){
 
     tip_asn <- tip_data[[tip]]
 
-    # x <- lastPP$xx[tip_i]
-    x <- max(lastPP$x.lim)
+    if (plot_species_markers_close){
+        x <- lastPP$xx[tip_i] + (20 * chgap)
+    } else {
+        x <- max(lastPP$x.lim)
+    }
     y <- lastPP$yy[tip_i]
-    yfrom <- y + y_smallstep
-    yto <- y + y_smallstep + chheight
+    yfrom <- y + y_smallstep - (chheight / 2)
+    yto <- y + y_smallstep + (chheight / 2)
     
     lgs_to_plot <- levels(tip_asn[, 'node'])
     mixed <- 0
@@ -370,6 +402,7 @@ for (tip_i in c(1:(length(tree$tip.label) + 2))){
     ordered_lgs <- all_node_lgs[order(dominan_asn, decreasing = T)]
     lgs_to_plot <- as.character(ordered_lgs)
 
+    print(paste("    chromosomes in order: ", paste(lgs_to_plot, collapse = ', ')))
     for (chr in 1:length(lgs_to_plot)){
         xfrom <- x + (chr * (chwidth + chgap))
         xto <- x + ((chr - 1) * (chwidth + chgap) + chgap)
@@ -378,12 +411,12 @@ for (tip_i in c(1:(length(tree$tip.label) + 2))){
         # making sure the order in the plot will be consisent
         bar_subset <- bar_subset[order(bar_subset[, 'ALG'], decreasing = F), ]
         if (simplified == 0){
-            columns_to_plot <- y + y_smallstep + (chheight * c(0, cumsum(bar_subset[, "Count"])) / sum(bar_subset[, "Count"]))
+            columns_to_plot <- yfrom + (chheight * c(0, cumsum(bar_subset[, "Count"])) / sum(bar_subset[, "Count"]))
         } else {
             theshold <- 1 / simplified
             pieces_per_ALG <- round((bar_subset[, "Count"] / sum(bar_subset[, "Count"])) / theshold)
             mixed <- (simplified - sum(pieces_per_ALG))
-            columns_to_plot <- y + y_smallstep + (chheight * c(0, cumsum(pieces_per_ALG)) / simplified)
+            columns_to_plot <- yfrom + (chheight * c(0, cumsum(pieces_per_ALG)) / simplified)
         }
 
         for(i in 1:nrow(bar_subset)){
@@ -398,11 +431,21 @@ for (tip_i in c(1:(length(tree$tip.label) + 2))){
                 xto, yto, 
                 col = 'gray', border = NA)            
         }
-    
-        if (lgs_to_plot[chr] %in% chromosomes_to_highlight){
-            rect(xfrom + (chgap / 2), y + y_smallstep - (chheight / 10), 
-                xto - (chgap / 2), y + y_smallstep + chheight + (chheight / 10), 
-                col = NA, border = 'red', lwd = 1.6)       
+
+        if (highlight_chromosomes_red != ""){    
+            if (lgs_to_plot[chr] %in% chromosomes_to_highlight_in_red){
+                rect(xfrom + (chgap / 2), yfrom - (chheight / 10), 
+                    xto - (chgap / 2), yto + (chheight / 10), 
+                    col = NA, border = 'red', lwd = 1.6)       
+            }
+        }
+
+        if (highlight_chromosomes_blue != ""){
+            if (lgs_to_plot[chr] %in% chromosomes_to_highlight_in_blue){
+                rect(xfrom + (chgap / 2), yfrom - (chheight / 10), 
+                    xto - (chgap / 2), yto + (chheight / 10), 
+                    col = NA, border = 'blue', lwd = 1.6)       
+            }
         }
 
     }
